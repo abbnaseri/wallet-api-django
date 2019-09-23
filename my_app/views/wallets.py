@@ -76,7 +76,7 @@ class ChargeWallet(View):
                 wallet.update(amount=amountFinal)
                 wallet[0].save()
                 Transaction(transType='Charge', fwalletid=walletid, amount=amountFinal).save()
-                return JsonResponse({"created": str(amountFinal)}, safe=False)
+                return JsonResponse({"Charged": str(amountFinal)}, safe=False)
             else:
                 return JsonResponse({"error": "Not allowed"}, safe=False)
         except:
@@ -100,7 +100,7 @@ class DechargeWallet(View):
                     wallet.update(amount=amountFinal)
                     wallet[0].save()
                     Transaction(transType='Decharge', fwalletid=walletid, amount=amountFinal).save()
-                    return JsonResponse({"created": str(amountFinal)}, safe=False)
+                    return JsonResponse({"Decharged": str(amountFinal)}, safe=False)
                 else:
                     return JsonResponse({"error": "Not enough value"}, safe=False)
             else:
@@ -130,7 +130,7 @@ class Transfer(View):
                     destWallet[0].save()
                     sourceWallet[0].save()
                     Transaction(transType='Transfer', fwalletid=sourceWallId, swalletid=destWallId, amount=amount2).save()
-                    return JsonResponse({"created": str(amount2)}, safe=False)
+                    return JsonResponse({"Transfered": str(amount2)}, safe=False)
                 else:
                     return JsonResponse({"error": "Not enough value"}, safe=False)
             else:
@@ -143,17 +143,24 @@ class Transfer(View):
 class WalletTransactions(View):
     def get(self, request, wallid):
         try:
-            page = int(request.GET.get('page'))
-            tr = Transaction.objects(fwalletid=wallid)
-            p = Paginator(tr, page)
-            paglist = []
-            pagdict = {}
-            for i in range(p.num_pages):
-                for j in range(len(p.page(i+1))):
-                    paglist.append({"type":str(p.page(i+1).object_list[j].transType), "amount":str(p.page(i+1).object_list[j].amount)})
-                pagdict[str(i+1)] = paglist
+            wa = Wallet.objects(WalletID=wallid)
+            print(str(request.user))
+            print(str(wa[0].user))
+            if str(request.user) == str(wa[0].user):
+                print("abbas")
+                page = int(request.GET.get('page'))
+                tr = Transaction.objects(fwalletid=wallid)
+                p = Paginator(tr, page)
                 paglist = []
-            return JsonResponse(pagdict, safe=False)
+                pagdict = {}
+                for i in range(p.num_pages):
+                    for j in range(len(p.page(i+1))):
+                        paglist.append({"type":str(p.page(i+1).object_list[j].transType), "amount":str(p.page(i+1).object_list[j].amount)})
+                    pagdict[str(i+1)] = paglist
+                    paglist = []
+                return JsonResponse(pagdict, safe=False)
+            else:
+                return JsonResponse({"error": "Not allowed"}, safe=False)
         except:
             return JsonResponse({"error": "not a valid data"}, safe=False)
 

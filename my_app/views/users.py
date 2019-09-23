@@ -22,7 +22,7 @@ class UserRegister(View):
         data = request.POST
         try:
             user = User.objects.create_user(username=data.get("username"), email=data.get("email"), password=data.get("password"))
-            return JsonResponse({"created": data}, safe=False)
+            return HttpResponse(status=201)
         except:
             return JsonResponse({"error": "not a valid data"}, safe=False)
 
