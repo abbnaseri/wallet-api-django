@@ -1,7 +1,7 @@
 from django.urls import path
 from . import views
 from my_app.views.users import UserLogin, UserRegister
-from my_app.views.wallets import WalletCreation, WalletList, WalletId, ChargeWallet, DechargeWallet, Transfer
+from my_app.views.wallets import WalletCreation, WalletList, WalletId, ChargeWallet, DechargeWallet, Transfer, WalletTransactions
 
 urlpatterns = [
     path('user/register/', UserRegister.as_view()),
@@ -12,4 +12,5 @@ urlpatterns = [
     path('wallet/charge/', ChargeWallet.as_view()),
     path('wallet/decharge/', DechargeWallet.as_view()),
     path('wallet/transfer/', Transfer.as_view()),
+    path('wallet/transaction/<int:wallid>/', WalletTransactions.as_view()),
 ]

@@ -4,6 +4,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.models import User
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
 from django.contrib import auth
 import json
 from my_app.models import Wallet, Transaction
@@ -136,4 +137,25 @@ class Transfer(View):
                 return JsonResponse({"error": "Not allowed"}, safe=False)
         except:
             return JsonResponse({"error": "not a valid data"}, safe=False)
+
+
+@method_decorator(decorators, name='dispatch')
+class WalletTransactions(View):
+    def get(self, request, wallid):
+        try:
+            page = int(request.GET.get('page'))
+            tr = Transaction.objects(fwalletid=wallid)
+            p = Paginator(tr, page)
+            paglist = []
+            pagdict = {}
+            for i in range(p.num_pages):
+                for j in range(len(p.page(i+1))):
+                    paglist.append({"type":str(p.page(i+1).object_list[j].transType), "amount":str(p.page(i+1).object_list[j].amount)})
+                pagdict[str(i+1)] = paglist
+                paglist = []
+            return JsonResponse(pagdict, safe=False)
+        except:
+            return JsonResponse({"error": "not a valid data"}, safe=False)
+
+
 
