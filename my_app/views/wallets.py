@@ -9,40 +9,40 @@ from django.contrib import auth
 import json
 from my_app.models import Wallet, Transaction
 import mongoengine
-import itertools
-import requests as req
 
 decorators = [csrf_exempt, login_required]
 
-@method_decorator(decorators, name='dispatch')
+@method_decorator(csrf_exempt, name='dispatch')
+@method_decorator(login_required, name='dispatch')
 class WalletCreation(View):
-    
+
     def post(self, request):
         data = request.POST
-        print(data)
+        # print(data)
         try:
             username = str(request.user)
             wname = str(data.get("name"))
             amount = float(data.get("amount"))
             walletid = int((Wallet.objects.count()) + 1)
-            print(walletid)
             wallet = Wallet(WalletID=walletid, name=wname, user=username, amount=amount).save()
-            print(wallet)
             return JsonResponse({"created": data}, safe=False)
         except:
             return JsonResponse({"error": "not a valid data"}, safe=False)
 
 
-@method_decorator(decorators, name='dispatch')
+@method_decorator(csrf_exempt, name='dispatch')
+@method_decorator(login_required, name='dispatch')
 class WalletList(View):
 
     def get(self, request):
         try:
             username = str(request.user)
-            wallet = Wallet.objects(user=username)
-            a = {}
-            for w, i in itertools.product(wallet, range(len(wallet))):
-                a[str(i)] = [{"name": str(w.name), "id": str(w.WalletID), "amount": str(w.amount)}]
+            wallets = Wallet.objects(user=username)
+            a = []
+            for w in wallets:
+                a.append({
+                    "name": str(w.name), "id": str(w.WalletID), "amount": str(w.amount)
+                    })
             return JsonResponse(a, safe=False)
         except:
             return JsonResponse({"error": "not a valid data"}, safe=False)
@@ -70,13 +70,14 @@ class ChargeWallet(View):
             walletid = int(data.get("id"))
             wallet = Wallet.objects(WalletID=walletid)
             if str(request.user) == str(wallet[0].user):
-                amount1 = float(wallet[0].amount)
                 amount2 = float(data.get("amount"))
-                amountFinal = amount1 + amount2
-                wallet.update(amount=amountFinal)
-                wallet[0].save()
-                Transaction(transType='Charge', fwalletid=walletid, amount=amountFinal).save()
-                return JsonResponse({"Charged": str(amountFinal)}, safe=False)
+                wallet = Wallet._get_collection().find_and_modify(
+                    query={'WalletID': walletid},
+                    update={'$inc':{'amount': amount2}},
+                    new=True
+                )
+                Transaction(transType='Charge', fwalletid=walletid, amount=amount2).save()
+                return JsonResponse({"Charged": str(amount2)}, safe=False)
             else:
                 return JsonResponse({"error": "Not allowed"}, safe=False)
         except:
@@ -93,16 +94,17 @@ class DechargeWallet(View):
             walletid = int(data.get("id"))
             wallet = Wallet.objects(WalletID=walletid)
             if str(request.user) == str(wallet[0].user):
-                amount1 = float(wallet[0].amount)
                 amount2 = float(data.get("amount"))
-                amountFinal = amount1 - amount2
-                if amountFinal >= 0:
-                    wallet.update(amount=amountFinal)
-                    wallet[0].save()
-                    Transaction(transType='Decharge', fwalletid=walletid, amount=amountFinal).save()
-                    return JsonResponse({"Decharged": str(amountFinal)}, safe=False)
+                wallet = Wallet._get_collection().find_and_modify(
+                    query={'WalletID': walletid, 'amount':{'$gte': amount2}},
+                    update={'$inc':{'amount': amount2 * -1}},
+                    new=True
+                )
+                if wallet is not None:
+                    Transaction(transType='Decharge', fwalletid=walletid, amount=amount2).save()
+                    return JsonResponse({"Decharged": str(amount2)}, safe=False)
                 else:
-                    return JsonResponse({"error": "Not enough value"}, safe=False)
+                    return JsonResponse({"error": "Not sufficient value"}, safe=False)
             else:
                 return JsonResponse({"error": "Not allowed"}, safe=False)
         except:

@@ -35,21 +35,18 @@ class UserLogin(View):
             use = data.get("username")
             passwd = data.get("password")
             email = data.get("email")
-            user = auth.authenticate(username=use, password=passwd)
-            if user is not None:
-                auth.login(request, user)
-                r = req.post('http://127.0.0.1:8000/o/token/',
-                    data={
-                        'grant_type': 'password',
-                        'username': data.get("username"),
-                        'password': data.get("password"),
-                        'client_id': CLIENT_ID,
-                        'client_secret': CLIENT_SECRET,
-                        'redirect_uri': 'http:example.com/'
-                    },
-                )
-                a = r.content.decode()
-                return HttpResponse(a)
+            r = req.post('http://127.0.0.1:8000/o/token/',
+                data={
+                    'grant_type': 'password',
+                    'username': data.get("username"),
+                    'password': data.get("password"),
+                    'client_id': CLIENT_ID,
+                    'client_secret': CLIENT_SECRET,
+                    'redirect_uri': 'http:example.com/'
+                },
+            )
+            a = r.json()
+            return JsonResponse(a)
 
         except:
             return JsonResponse({"error": "not a valid data"}, safe=False)
