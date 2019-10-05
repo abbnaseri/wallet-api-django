@@ -18,7 +18,6 @@ class WalletCreation(View):
 
     def post(self, request):
         data = request.POST
-        # print(data)
         try:
             username = str(request.user)
             wname = str(data.get("name"))
@@ -146,8 +145,6 @@ class WalletTransactions(View):
     def get(self, request, wallid):
         try:
             wa = Wallet.objects(WalletID=wallid)
-            print(str(request.user))
-            print(str(wa[0].user))
             if str(request.user) == str(wa[0].user):
                 print("abbas")
                 page = int(request.GET.get('page'))
@@ -165,6 +162,3 @@ class WalletTransactions(View):
                 return JsonResponse({"error": "Not allowed"}, safe=False)
         except:
             return JsonResponse({"error": "not a valid data"}, safe=False)
-
-
-
