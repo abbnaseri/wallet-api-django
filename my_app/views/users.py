@@ -32,9 +32,6 @@ class UserLogin(View):
     def post(self, request):
         data = request.POST
         try:
-            use = data.get("username")
-            passwd = data.get("password")
-            email = data.get("email")
             r = req.post('http://127.0.0.1:8000/o/token/',
                 data={
                     'grant_type': 'password',

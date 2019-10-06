@@ -36,6 +36,7 @@ class WalletList(View):
     def get(self, request):
         try:
             username = str(request.user)
+            print(username)
             wallets = Wallet.objects(user=username)
             a = []
             for w in wallets:
@@ -117,20 +118,21 @@ class Transfer(View):
         try:
             sourceWallId = int(data.get("Sourceid"))
             destWallId = int(data.get("Destid"))
-            sourceWallet = Wallet.objects(WalletID=sourceWallId)
-            destWallet = Wallet.objects(WalletID=destWallId)
             if str(request.user) == str(sourceWallet[0].user):
-                amount1 = float(sourceWallet[0].amount)
                 amount2 = float(data.get("amount"))
-                sourceAmountFinal = amount1 - amount2
-                amount1 = float(destWallet[0].amount)
-                destAmountFinal = amount1 + amount2
-                if sourceAmountFinal >= 0:
-                    destWallet.update(amount=destAmountFinal)
-                    sourceWallet.update(amount=sourceAmountFinal)
-                    destWallet[0].save()
-                    sourceWallet[0].save()
+                wallet = Wallet._get_collection().find_and_modify(
+                    query={'WalletID': sourceWallId, 'amount':{'$gte': amount2}},
+                    update={'$inc':{'amount': amount2 * -1}},
+                    new=True
+                )
+                if wallet is not None:
+                    wallet1 = Wallet._get_collection().find_and_modify(
+                    query={'WalletID': destWallId},
+                    update={'$inc':{'amount': amount2}},
+                    new=True
+                    )
                     Transaction(transType='Transfer', fwalletid=sourceWallId, swalletid=destWallId, amount=amount2).save()
+                    Transaction(transType='Charge', fwalletid=destWallId, amount=amount2).save()
                     return JsonResponse({"Transfered": str(amount2)}, safe=False)
                 else:
                     return JsonResponse({"error": "Not enough value"}, safe=False)
@@ -162,3 +164,4 @@ class WalletTransactions(View):
                 return JsonResponse({"error": "Not allowed"}, safe=False)
         except:
             return JsonResponse({"error": "not a valid data"}, safe=False)
+
