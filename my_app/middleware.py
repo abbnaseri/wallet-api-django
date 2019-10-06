@@ -3,9 +3,6 @@ import json
 
 
 class JSONMiddleware:
-    """
-    Process application/json requests data from GET and POST requests.
-    """
 
     def __init__(self, get_response):
         self.get_response = get_response
